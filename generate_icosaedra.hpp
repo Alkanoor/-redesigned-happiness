@@ -1,0 +1,7 @@
+#ifndef GENERATE_ICOSAEDRA_HPP
+#define GENERATE_ICOSAEDRA_HPP
+
+
+
+
+#endif
