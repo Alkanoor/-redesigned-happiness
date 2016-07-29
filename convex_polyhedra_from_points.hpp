@@ -2,22 +2,10 @@
 #define CONVEX_POLYHEDRA_FROM_POINTS_HPP
 
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/convex_hull_3.h>
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/algorithm.h>
+#include "polyhedra.hpp"
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel  K;
-typedef CGAL::Polyhedron_3<K>                     Polyhedron_3;
-typedef K::Segment_3                              Segment_3;
-typedef K::Vector_3                               Vector_3;
-typedef K::Point_3                                Point_3;
-typedef K::Plane_3                                Plane_3;
-typedef Polyhedron_3::Halfedge_iterator           Halfedge_iterator;
-typedef Polyhedron_3::Halfedge_handle             Halfedge_handle;
-typedef Polyhedron_3::Facet_iterator              Facet_iterator;
-typedef CGAL::Creator_uniform_3<double, Point_3>  PointCreator;
-typedef Polyhedron_3::Halfedge_around_facet_circulator Halfedge_facet_circulator;
+#include <CGAL/convex_hull_3.h>
+#include <CGAL/algorithm.h>
 
 
 bool coplanar_handmade(const Point_3& p1, const Point_3& p2, const Point_3& p3, const Point_3& p4, double precision = 0.00001)
@@ -40,12 +28,6 @@ struct Plane_from_facet
     }
 };
 
-
-struct Polyhedra
-{
-    std::vector<Point_3> points;
-    std::vector<std::vector<int> > faces;
-};
 
 Polyhedra generate_polyhedra_from_points(const std::vector<std::array<double,3> >& vertices)
 {

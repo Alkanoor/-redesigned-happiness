@@ -44,10 +44,10 @@ run: createDir $(EXEC1)
 
 run-regular: run
 
-run-archimede: createDir $(EXEC2)
+run-archimede: createDir run-regular $(EXEC2)
 	./$(EXEC2)
 
-run-shining: createDir $(EXEC3)
+run-shining: createDir run-archimede $(EXEC3)
 	./$(EXEC3)
 
 
