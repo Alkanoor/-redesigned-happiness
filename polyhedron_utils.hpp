@@ -35,5 +35,15 @@ std::array<double,3> convert_to_array(const Vector_3& p)
     return std::array<double,3>({p.x(),p.y(),p.z()});
 }
 
+Vector_3 point_to_vec(const Point_3& v)
+{
+    return Vector_3(v.x(),v.y(),v.z());
+}
+
+Point_3 vec_to_point(const Vector_3& v)
+{
+    return Point_3(v.x(),v.y(),v.z());
+}
+
 
 #endif
