@@ -27,41 +27,7 @@ std::string file(const std::string& in)
 
 void generate_and_save(const std::string& path)
 {
-    std::vector<Point_3> points;
-    std::vector<std::vector<int> > faces;
-
-    int cur = 0;
-    std::string tmp;
-    bool put_faces = false;
-    std::ifstream ifs(path,std::ios::in);
-
-    while(std::getline(ifs,tmp))
-    {
-        if(tmp=="")
-            put_faces = true;
-        else
-            if(!put_faces)
-            {
-                std::istringstream iss(tmp);
-                double x, y, z;
-                iss>>x>>y>>z;
-                points.push_back(Point_3(x,y,z));
-            }
-            else
-            {
-                faces.push_back(std::vector<int>());
-                std::istringstream iss(tmp);
-                int index;
-
-                while(iss>>index)
-                    faces[cur].push_back(index);
-
-                cur++;
-            }
-        std::cout<<tmp<<std::endl;
-    }
-
-    Polyhedra p{points,faces};
+    Polyhedra p = from_file(path);
 
     for(auto it=operations.begin(); it!=operations.end(); it++)
     {
@@ -70,10 +36,28 @@ void generate_and_save(const std::string& path)
         print_endline(ofs,p2.points);
         ofs<<std::endl;
         print_sep(ofs,p2.faces,' ');
+
+        std::ofstream ofs_json("archimede_json/"+file(path)+"."+it->first,std::ios::out|std::ios::trunc);
+        ofs_json<<"{\"vertices\":[";
+        for(unsigned int i=0; i<p2.points.size(); i++)
+            if(i+1<p2.points.size())
+                ofs_json<<p2.points[i].x()<<","<<p2.points[i].y()<<","<<p2.points[i].z()<<",";
+            else
+                ofs_json<<p2.points[i].x()<<","<<p2.points[i].y()<<","<<p2.points[i].z();
+        ofs_json<<"],\"faces\":[";
+        for(auto f : p2.faces)
+        {
+            ofs_json<<"[";
+            for(unsigned int i=0; i<f.size(); i++)
+                if(i+1<f.size())
+                    ofs_json<<f[i]<<",";
+                else
+                    ofs_json<<f[i];
+            ofs_json<<"]";
+        }
+        ofs_json<<"]}";
     }
 }
-
-
 
 
 
