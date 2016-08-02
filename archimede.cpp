@@ -134,7 +134,7 @@ Polyhedra rectified(const Polyhedra& p)
     return generate_polyhedra_from_points(points);
 }
 
-Polyhedra biseauted(const Polyhedra& p)
+Polyhedra biseauted_chosen_faces(const Polyhedra& p, const std::vector<int>& good_faces)
 {
     std::vector<std::array<double,3> > points;
 
@@ -143,72 +143,73 @@ Polyhedra biseauted(const Polyhedra& p)
         center = center+(p.points[i]-Point_3(0,0,0));
     center = center/(double)p.points.size();
 
-    unsigned int tmp = p.faces[0].size();
+    unsigned int tmp = p.faces[good_faces[0]].size();
     Vector_3 tmp_middle_face(0,0,0);
     for(unsigned int j=0;j<tmp;j++)
-        tmp_middle_face = tmp_middle_face+(p.points[p.faces[0][j]]-Point_3(0,0,0));
+        tmp_middle_face = tmp_middle_face+(p.points[p.faces[good_faces[0]][j]]-Point_3(0,0,0));
     tmp_middle_face = tmp_middle_face/(double)tmp;
 
-    double prev_a = CGAL::squared_distance(p.points[p.faces[0][0]],p.points[p.faces[0][1]]);
+    double prev_a = CGAL::squared_distance(p.points[p.faces[good_faces[0]][0]],p.points[p.faces[good_faces[0]][1]]);
     double a = 0;
 
     Vector_3 tmp_middle_face_2(0,0,0);
     bool found = false;
-    for(unsigned int i=1;i<p.faces.size();i++)
+    for(unsigned int i=1;i<good_faces.size();i++)
     {
         tmp_middle_face_2 = Vector_3(0,0,0);
-        for(unsigned int j=0;j<p.faces[i].size();j++)
-            if((p.faces[i][j]==p.faces[0][0]&&p.faces[i][(j+1)%p.faces[i].size()]==p.faces[0][1])
-               ||(p.faces[i][j]==p.faces[0][1]&&p.faces[i][(j+1)%p.faces[i].size()]==p.faces[0][0]))
-            {
-                for(unsigned int k=0;k<p.faces[i].size();k++)
-                    tmp_middle_face_2 = tmp_middle_face_2+(p.points[p.faces[i][k]]-Point_3(0,0,0));
-                tmp_middle_face_2 = tmp_middle_face_2/(double)p.faces[i].size();
-
-                double a_min = 0, a_max = 1000*prev_a;
-                int n_max = 1000, n_iter = 0;
-                while(!found&&n_iter<n_max)
+        for(unsigned int j=0;j<p.faces[good_faces[i]].size()&&!found;j++)
+            for(unsigned int k=0;k<p.faces[good_faces[0]].size()&&!found;k++)
+                if((p.faces[good_faces[i]][j]==p.faces[good_faces[0]][k]&&p.faces[good_faces[i]][(j+1)%p.faces[good_faces[i]].size()]==p.faces[good_faces[0]][(k+1)%p.faces[good_faces[0]].size()])
+                   ||(p.faces[good_faces[i]][j]==p.faces[good_faces[0]][(k+1)%p.faces[good_faces[0]].size()]&&p.faces[good_faces[i]][(j+1)%p.faces[good_faces[i]].size()]==p.faces[good_faces[0]][k]))
                 {
-                    a = (a_min+a_max)/2.0;
-                    Vector_3 normalized_dif_1 = tmp_middle_face-center;
-                    normalized_dif_1 = normalized_dif_1/sqrt(normalized_dif_1*normalized_dif_1);
-                    Vector_3 new_center_1 = center+normalized_dif_1*a;
+                    for(unsigned int k=0;k<p.faces[good_faces[i]].size();k++)
+                        tmp_middle_face_2 = tmp_middle_face_2+(p.points[p.faces[good_faces[i]][k]]-Point_3(0,0,0));
+                    tmp_middle_face_2 = tmp_middle_face_2/(double)p.faces[good_faces[i]].size();
 
-                    Vector_3 normalized_dif_2 = tmp_middle_face_2-center;
-                    normalized_dif_2 = normalized_dif_2/sqrt(normalized_dif_2*normalized_dif_2);
-                    Vector_3 new_center_2 = center+normalized_dif_2*a;
-
-                    Point_3 p_1 = vec_to_point(new_center_1+point_to_vec(p.points[p.faces[0][0]])-tmp_middle_face);
-                    Point_3 p_2 = vec_to_point(new_center_2+point_to_vec(p.points[p.faces[0][0]])-tmp_middle_face_2);
-
-                    double d = CGAL::squared_distance(p_1,p_2);
-
-                    if(fabs(d-prev_a)<0.00001)
+                    double a_min = 0, a_max = 1000*prev_a;
+                    int n_max = 1000, n_iter = 0;
+                    while(!found&&n_iter<n_max)
                     {
-                        found = true;
-                        break;
+                        a = (a_min+a_max)/2.0;
+                        Vector_3 normalized_dif_1 = tmp_middle_face-center;
+                        normalized_dif_1 = normalized_dif_1/sqrt(normalized_dif_1*normalized_dif_1);
+                        Vector_3 new_center_1 = center+normalized_dif_1*a;
+
+                        Vector_3 normalized_dif_2 = tmp_middle_face_2-center;
+                        normalized_dif_2 = normalized_dif_2/sqrt(normalized_dif_2*normalized_dif_2);
+                        Vector_3 new_center_2 = center+normalized_dif_2*a;
+
+                        Point_3 p_1 = vec_to_point(new_center_1+point_to_vec(p.points[p.faces[good_faces[0]][0]])-tmp_middle_face);
+                        Point_3 p_2 = vec_to_point(new_center_2+point_to_vec(p.points[p.faces[good_faces[0]][0]])-tmp_middle_face_2);
+
+                        double d = CGAL::squared_distance(p_1,p_2);
+
+                        if(fabs(d-prev_a)<0.00001)
+                        {
+                            found = true;
+                            break;
+                        }
+                        else if(d>prev_a)
+                            a_max = a;
+                        else
+                            a_min = a;
+
+                        n_iter++;
                     }
-                    else if(d>prev_a)
-                        a_max = a;
-                    else
-                        a_min = a;
 
-                    n_iter++;
+
+                    break;
                 }
-
-
-                break;
-            }
         if(found)
             break;
     }
 
-    for(unsigned int i=0;i<p.faces.size();i++)
+    for(unsigned int i=0;i<good_faces.size();i++)
     {
-        unsigned int s = p.faces[i].size();
+        unsigned int s = p.faces[good_faces[i]].size();
         Vector_3 middle_face(0,0,0);
         for(unsigned int j=0;j<s;j++)
-            middle_face = middle_face+(p.points[p.faces[i][j]]-Point_3(0,0,0));
+            middle_face = middle_face+(p.points[p.faces[good_faces[i]][j]]-Point_3(0,0,0));
         middle_face = middle_face/(double)s;
         Vector_3 normalized_dif = middle_face-center;
         normalized_dif = normalized_dif/sqrt(normalized_dif*normalized_dif);
@@ -216,12 +217,21 @@ Polyhedra biseauted(const Polyhedra& p)
 
         for(unsigned int j=0;j<s;j++)
         {
-            Vector_3 dif = point_to_vec(p.points[p.faces[i][j]])-middle_face;
+            Vector_3 dif = point_to_vec(p.points[p.faces[good_faces[i]][j]])-middle_face;
             points.push_back(convert_to_array(new_center+dif));
         }
     }
 
     return generate_polyhedra_from_points(points);
+}
+
+Polyhedra biseauted(const Polyhedra& p)
+{
+    std::vector<int> good_faces(p.faces.size());
+    for(unsigned int i=0;i<good_faces.size();i++)
+        good_faces[i] = i;
+
+    return biseauted_chosen_faces(p,good_faces);
 }
 
 Polyhedra softened_on_omni(const Polyhedra& p)
@@ -288,6 +298,39 @@ Polyhedra softened_on_omni(const Polyhedra& p)
     return generate_polyhedra_from_points(points);
 }
 
+std::vector<int> matching(const Polyhedra& p1, const Polyhedra& p2)
+{
+    std::vector<int> ret;
+
+    std::vector<Vector_3> middles_p1(p1.faces.size());
+    for(unsigned int i=0;i<p1.faces.size();i++)
+    {
+        unsigned int s = p1.faces[i].size();
+        Vector_3 middle_face(0,0,0);
+        for(unsigned int j=0;j<s;j++)
+            middle_face = middle_face+(p1.points[p1.faces[i][j]]-Point_3(0,0,0));
+        middles_p1[i] = middle_face/(double)s;
+    }
+
+    for(unsigned int i=0;i<p2.faces.size();i++)
+    {
+        unsigned int s = p2.faces[i].size();
+        Vector_3 middle_face(0,0,0);
+        for(unsigned int j=0;j<s;j++)
+            middle_face = middle_face+(p2.points[p2.faces[i][j]]-Point_3(0,0,0));
+        middle_face = middle_face/(double)s;
+
+        for(auto j : middles_p1)
+            if(CGAL::squared_distance(vec_to_point(middle_face),vec_to_point(j))<0.000001)
+            {
+                ret.push_back(i);
+                break;
+            }
+    }
+
+    return ret;
+}
+
 Polyhedra identity(const Polyhedra& p)
 {return p;}
 
@@ -295,7 +338,10 @@ Polyhedra dual_truncated(const Polyhedra& p)
 {return truncated(dual(p));}
 
 Polyhedra omnitruncated(const Polyhedra& p)
-{return biseauted(truncated(p));}
+{
+    Polyhedra truncated_p = truncated(p);
+    return biseauted_chosen_faces(truncated_p,matching(p,truncated_p));
+}
 
 Polyhedra softened(const Polyhedra& p)
 {return softened_on_omni(omnitruncated(p));}
@@ -303,13 +349,13 @@ Polyhedra softened(const Polyhedra& p)
 
 int main()
 {
-    //operations["identity"] = std::bind(&identity,std::placeholders::_1);
-    //operations["dual"] = std::bind(&dual,std::placeholders::_1);
+    operations["identity"] = std::bind(&identity,std::placeholders::_1);
+    operations["dual"] = std::bind(&dual,std::placeholders::_1);
     operations["truncated"] = std::bind(&truncated,std::placeholders::_1);
-    //operations["rectified"] = std::bind(&rectified,std::placeholders::_1);
-    //operations["biseauted"] = std::bind(&biseauted,std::placeholders::_1);
+    operations["rectified"] = std::bind(&rectified,std::placeholders::_1);
+    operations["biseauted"] = std::bind(&biseauted,std::placeholders::_1);
     operations["omnitruncated"] = std::bind(&omnitruncated,std::placeholders::_1);
-    //operations["softened"] = std::bind(&softened,std::placeholders::_1);
+    operations["softened"] = std::bind(&softened,std::placeholders::_1);
     operations["dual_truncated"] = std::bind(&dual_truncated,std::placeholders::_1);
 
     std::cout<<"======CUBE======"<<std::endl;
