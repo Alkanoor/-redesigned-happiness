@@ -8,7 +8,7 @@
 #include <CGAL/algorithm.h>
 
 
-bool coplanar_handmade(const Point_3& p1, const Point_3& p2, const Point_3& p3, const Point_3& p4, double precision = 0.00001)
+bool coplanar_handmade(const Point_3& p1, const Point_3& p2, const Point_3& p3, const Point_3& p4, double precision = 0.0001)
 {
     Vector_3 v1 = p2-p1, v2 = p3-p1, v3 = p4-p1;
     auto v4 = CGAL::cross_product(v1,v2);

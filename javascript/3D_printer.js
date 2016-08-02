@@ -7,7 +7,7 @@ function parse_to_geom(vertices, faces)
 {
     var geometry = new THREE.Geometry();
     for(i=0; i<vertices.length; i+=3)
-	geometry.vertices.push(new THREE.Vector3(300*vertices[i],300*vertices[i+1],300*vertices[i+2]));
+	geometry.vertices.push(new THREE.Vector3(200*vertices[i],200*vertices[i+1],200*vertices[i+2]));
     
     for(i=0; i<faces.length; i++)
         for(j=2; j<faces[i].length; j++)
@@ -19,8 +19,9 @@ function parse_to_geom(vertices, faces)
 function init()
 {
     scene = new THREE.Scene();
-
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+	
+    camera = new THREE.OrthographicCamera(window.innerWidth/-2, window.innerWidth/2, window.innerHeight/2, window.innerHeight/-2, 0.1, 10000);
+    //camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
     camera.position.z = 1000;
     
     $.get("http://localhost:8181/geom", function(result) {
@@ -48,15 +49,25 @@ function finish_init()
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     document.body.appendChild(renderer.domElement);
-
+    
+    pause = 0;
+    window.addEventListener('keydown', function(event) {
+  	switch(event.keyCode) {
+            case 32:
+	        pause = 1-pause;
+	    break;}
+        }, false);
 }
 
 function animate()
 {
     requestAnimationFrame(animate);
-
-    mesh.rotation.x += 0.01;
-    mesh.rotation.y += 0.02;
+    
+    if(!pause)
+    {
+        mesh.rotation.x += 0.01;
+        mesh.rotation.y += 0.02;
+    }
 
     renderer.render(scene, camera);
 }
