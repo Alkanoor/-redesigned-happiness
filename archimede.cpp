@@ -31,38 +31,12 @@ void generate_and_save(const std::string& path)
 
     for(auto it=operations.begin(); it!=operations.end(); it++)
     {
-        std::ofstream ofs("archimede/"+file(path)+"."+it->first,std::ios::out|std::ios::trunc);
         Polyhedra p2 = it->second(p);
+        to_file(p2,"archimede/"+file(path)+"."+it->first);
         std::cout<<it->first<<std::endl;
         print_character(p2);
-        print_endline(ofs,p2.points);
-        ofs<<std::endl;
-        print_sep(ofs,p2.faces,' ');
 
-        std::ofstream ofs_json("archimede_json/"+file(path)+"."+it->first+".json",std::ios::out|std::ios::trunc);
-        ofs_json<<"{\"vertices\":[";
-        for(unsigned int i=0; i<p2.points.size(); i++)
-            if(i+1<p2.points.size())
-                ofs_json<<p2.points[i].x()<<","<<p2.points[i].y()<<","<<p2.points[i].z()<<",";
-            else
-                ofs_json<<p2.points[i].x()<<","<<p2.points[i].y()<<","<<p2.points[i].z();
-        ofs_json<<"],\"faces\":[";
-        unsigned int cur = 0;
-        for(auto f : p2.faces)
-        {
-            ofs_json<<"[";
-            for(unsigned int i=0; i<f.size(); i++)
-                if(i+1<f.size())
-                    ofs_json<<f[i]<<",";
-                else
-                    ofs_json<<f[i];
-            if(cur+1<p2.faces.size())
-                ofs_json<<"],";
-            else
-                ofs_json<<"]";
-            cur++;
-        }
-        ofs_json<<"]}";
+        to_file_json(p2,"archimede_json/"+file(path)+"."+it->first+".json");
     }
 }
 
@@ -234,70 +208,6 @@ Polyhedra biseauted(const Polyhedra& p)
     return biseauted_chosen_faces(p,good_faces);
 }
 
-Polyhedra softened_on_omni(const Polyhedra& p)
-{
-    std::vector<std::array<double,3> > points;
-    std::map<int,char> point_tags;
-    std::set<int> done_faces;
-
-    int s;
-    int cur_face = 0;
-    int cur_modulo = 0;
-    while(done_faces.size()<p.faces.size())
-    {
-        s = p.faces[cur_face].size();
-        done_faces.insert(cur_face);
-        for(int j=0;j<s;j++)
-            if(j%2==cur_modulo)
-            {
-                if(point_tags.count(p.faces[cur_face][j])&&point_tags[p.faces[cur_face][j]]!=0)
-                {
-                    std::cout<<"Should not happen in softening, face "<<cur_face<<std::endl;
-                    exit(0);
-                }
-                point_tags[p.faces[cur_face][j]] = 0;
-                points.push_back(convert_to_array(p.points[p.faces[cur_face][j]]));
-            }
-            else
-            {
-                if(point_tags.count(p.faces[cur_face][j])&&point_tags[p.faces[cur_face][j]]!=1)
-                {
-                    std::cout<<"Should not happen in softening, face "<<cur_face<<std::endl;
-                    exit(0);
-                }
-                point_tags[p.faces[cur_face][j]] = 1;
-            }
-
-        for(unsigned int i=0;i<p.faces.size();i++)
-            if(!done_faces.count(i))
-            {
-                int found = -1;
-                s = p.faces[i].size();
-                for(int j=0;j<s;j++)
-                    if(point_tags.count(p.faces[i][j]))
-                    {
-                        found = j;
-                        break;
-                    }
-
-                if(found>=0)
-                {
-                    cur_face = i;
-                    if(point_tags[p.faces[cur_face][found]]==0)
-                        cur_modulo = found%2;
-                    else
-                        cur_modulo = 1-(found%2);
-
-                    break;
-                }
-            }
-    }
-
-    std::cout<<"softened"<<std::endl;
-    print_character(generate_polyhedra_from_points(points));
-    return generate_polyhedra_from_points(points);
-}
-
 std::vector<int> matching(const Polyhedra& p1, const Polyhedra& p2)
 {
     std::vector<int> ret;
@@ -343,81 +253,104 @@ Polyhedra omnitruncated(const Polyhedra& p)
     return biseauted_chosen_faces(truncated_p,matching(p,truncated_p));
 }
 
-// Polyhedra softened(const Polyhedra& p)
-// {return softened_on_omni(omnitruncated(p));}
+double measure(double a, double b, double c)
+{
+    return (fabs(a-b)+fabs(a-c)+fabs(b-c))/(a+b+c);
+}
 
-double eval(double theta, double s, const Vector_3& middle1, const Vector_3& middle2, const Vector_3& v1_x, const Vector_3& v1_y, const Vector_3& v2_x, const Vector_3& v2_y, double center_angle)
+std::pair<double,double> get_2_minorants(const std::vector<double>& d)
+{
+    std::pair<double,double> ret;
+    ret.first = d[0];
+    ret.second = d[1];
+    if(ret.first>ret.second)
+    {
+        ret.first = d[1];
+        ret.second = d[0];
+    }
+
+    for(unsigned int i=2;i<d.size();i++)
+        if(d[i]<ret.first)
+        {
+            ret.second = ret.first;
+            ret.first = d[i];
+        }
+        else if(d[i]<ret.second)
+            ret.second = d[i];
+
+    return ret;
+}
+
+std::pair<double,double> eval(double theta, double s, const Vector_3& middle1, const Vector_3& middle2, const Vector_3& v1_x, const Vector_3& v1_y, const Vector_3& v2_x, const Vector_3& v2_y, double center_angle)
 {
     Point_3 t1 = vec_to_point(middle1+s*cos(theta)*v1_x+s*sin(theta)*v1_y);
     Point_3 t2 = vec_to_point(middle1+s*cos(theta-center_angle)*v1_x+s*sin(theta-center_angle)*v1_y);
-    Point_3 t3 = vec_to_point(middle2+s*cos(theta)*v2_x+s*sin(theta)*v2_y);
+    Point_3 t3 = vec_to_point(middle1+s*cos(theta+center_angle)*v1_x+s*sin(theta+center_angle)*v1_y);
+    Point_3 t4 = vec_to_point(middle2+s*cos(-theta+center_angle)*v2_x+s*sin(-theta+center_angle)*v2_y);
 
-    double d1 = sqrt(CGAL::squared_distance(t1,t3));
-    double d2 = sqrt(CGAL::squared_distance(t2,t3));
+    std::vector<double> d;
+    d.push_back(sqrt(CGAL::squared_distance(t1,t4)));
+    d.push_back(sqrt(CGAL::squared_distance(t2,t4)));
+    d.push_back(sqrt(CGAL::squared_distance(t3,t4)));
 
-    /*std::cout<<"========================="<<std::endl;
-    std::cout<<theta/M_PI*180.f<<std::endl;
-    std::cout<<t1<<std::endl;
-    std::cout<<t2<<std::endl;
-    std::cout<<t3<<std::endl;
-    std::cout<<theta<<" "<<center_angle<<" "<<center_angle/M_PI*180.0<<std::endl;
-    std::cout<<"=> "<<d1<<" "<<d2<<std::endl;*/
-
-    return 1/(0.0001+fabs(d1-d2));
+    return get_2_minorants(d);
 }
 
-double eval2(double theta, double s, const Vector_3& middle1, const Vector_3& middle2, const Vector_3& v1_x, const Vector_3& v1_y, const Vector_3& v2_x, const Vector_3& v2_y, double center_angle)
+Point_3 transform(double theta, double s, const Vector_3& middle, const Vector_3& v_x, const Vector_3& v_y)
 {
-    Point_3 t1 = vec_to_point(middle1+s*cos(theta)*v1_x+s*sin(theta)*v1_y);
-    Point_3 t2 = vec_to_point(middle1+s*cos(theta-center_angle)*v1_x+s*sin(theta-center_angle)*v1_y);
-    Point_3 t3 = vec_to_point(middle2+s*cos(theta)*v2_x+s*sin(theta)*v2_y);
-
-    double d1 = sqrt(CGAL::squared_distance(t1,t3));
-    double d2 = sqrt(CGAL::squared_distance(t2,t3));
-
-    std::cout<<"=> "<<d1<<" "<<d2<<" "<<(d1+d2)/2<<std::endl;
-
-    return (d1+d2)/2;
+    return vec_to_point(middle+s*cos(theta)*v_x+s*sin(theta)*v_y);
 }
 
-double find_best_theta(double begin, double end, double prec, double s, double& theta, const Vector_3& middle1, const Vector_3& middle2, const Vector_3& v1_x, const Vector_3& v1_y, const Vector_3& v2_x, const Vector_3& v2_y, double center_angle)
+std::pair<double,double> find_best_theta_grid(double begin_theta, double end_theta, double begin_s, double end_s, double prec, int subdivides, double& s, double& theta, const Vector_3& middle1, const Vector_3& middle2, const Vector_3& v1_x, const Vector_3& v1_y, const Vector_3& v2_x, const Vector_3& v2_y, double center_angle, double a)
 {
-    theta = begin+(end-begin)*0.5;
-    if(fabs(end-begin)<prec)
-        return eval2(theta, s, middle1, middle2, v1_x, v1_y, v2_x, v2_y, center_angle);
+    if(fabs(end_theta-begin_theta)<prec)
+        return eval((begin_theta+end_theta)/2.0,(begin_s+end_s)/2.0,middle1,middle2,v1_x,v1_y,v2_x,v2_y,center_angle);
 
-    double a = eval(begin+(end-begin)*0.25, s, middle1, middle2, v1_x, v1_y, v2_x, v2_y, center_angle);
-    double b = eval(begin+(end-begin)*0.5, s, middle1, middle2, v1_x, v1_y, v2_x, v2_y, center_angle);
-    double c = eval(begin+(end-begin)*0.75, s, middle1, middle2, v1_x, v1_y, v2_x, v2_y, center_angle);
+    double mini = -1;
+    for(double s2=begin_s;s2<=end_s;s2+=(end_s-begin_s)/(double)subdivides)
+        for(double theta2=begin_theta;theta2<=end_theta;theta2+=(end_theta-begin_theta)/(double)subdivides)
+        {
+            std::pair<double,double> tmp = eval(theta2, s2, middle1, middle2, v1_x, v1_y, v2_x, v2_y, center_angle);
+            double m = measure(tmp.first, tmp.second, s2*a);
+            if(m<mini||mini<0)
+            {
+                mini = m;
+                s = s2;
+                theta = theta2;
+            }
+        }
 
-    if(a>b&&b>=c)
-        return find_best_theta(begin,begin+(end-begin)*0.5,prec,s,theta,middle1,middle2,v1_x,v1_y,v2_x,v2_y,center_angle);
-    else if(a>b)
-    {
-        std::cerr<<"Error during finding best theta ! t="<<theta<<" s="<<s<<" a="<<a<<" b="<<b<<" c="<<c<<std::endl;
-        exit(1);
-    }
-    else if(b>=c&&b>=a)
-        return find_best_theta(begin+(end-begin)*0.25,begin+(end-begin)*0.75,prec,s,theta,middle1,middle2,v1_x,v1_y,v2_x,v2_y,center_angle);
-    else if(c>b&&b>=a)
-        return find_best_theta(begin+(end-begin)*0.5,end,prec,s,theta,middle1,middle2,v1_x,v1_y,v2_x,v2_y,center_angle);
-    else
-    {
-        std::cerr<<"Error during finding best theta ! t="<<theta<<" s="<<s<<" a="<<a<<" b="<<b<<" c="<<c<<std::endl;
-        exit(1);
-    }
+    double a1 = theta-(end_theta-begin_theta)/(double)subdivides;
+    double a2 = theta+(end_theta-begin_theta)/(double)subdivides;
+    double b1 = s-(end_s-begin_s)/(double)subdivides;
+    double b2 = s+(end_s-begin_s)/(double)subdivides;
+    if(a1<0)
+        a1 = 0;
+    if(a2>center_angle)
+        a2 = center_angle;
+    if(b1<0.1)
+        b1 = 0.1;
+    if(b2>1)
+        b2 = 1;
+    return find_best_theta_grid(a1,a2,b1,b2,prec,subdivides,
+                                s,theta,middle1,middle2,v1_x,v1_y,v2_x,v2_y,center_angle,a);
 }
+
 
 Polyhedra softened(const Polyhedra& p)
 {
+    std::vector<std::array<double,3> > points;
+
+    Vector_3 center(0,0,0);
+    for(unsigned int i=0;i<p.points.size();i++)
+        center = center+(p.points[i]-Point_3(0,0,0));
+    center = center/(double)p.points.size();
+
     Vector_3 middle1(0,0,0), middle2(0,0,0);
     Vector_3 v1_x(0,0,0), v1_y(0,0,0), v2_x(0,0,0), v2_y(0,0,0);
 
-    std::cout<<p<<std::endl;
-    print_character(p);
-
     double a = sqrt(CGAL::squared_distance(p.points[p.faces[0][0]],p.points[p.faces[0][1]]));
-    double center_angle = (180.f-360.f/(double)p.faces[0].size())/180.f*M_PI;
+    double center_angle = 2.0*M_PI/(double)p.faces[0].size();
 
     Vector_3 tmp_middle_face_2(0,0,0);
     bool found = false;
@@ -440,40 +373,37 @@ Polyhedra softened(const Polyhedra& p)
                 v1_y = point_to_vec(p.points[p.faces[0][1]])-middle1;
                 v2_x = point_to_vec(p.points[p.faces[0][0]])-middle2;
                 v2_y = point_to_vec(p.points[p.faces[0][1]])-middle2;
-                v1_y = v1_y-(v1_x*v1_y)*v1_x;
+                v1_y = v1_y-(v1_x*v1_y)*v1_x/(v1_x*v1_x);
                 v1_y = v1_y/sqrt((v1_y*v1_y)/(v1_x*v1_x));
-                v2_y = v2_y-(v2_x*v2_y)*v2_x;
+                v2_y = v2_y-(v2_x*v2_y)*v2_x/(v2_x*v2_x);
                 v2_y = v2_y/sqrt((v2_y*v2_y)/(v2_x*v2_x));
 
-                std::cout<<"Found !"<<std::endl;
-                std::cout<<p.points[p.faces[0][0]]<<" "<<p.points[p.faces[0][1]]<<" ; "<<p.points[p.faces[0][p.faces[i].size()-1]]<<" ; "<<middle1<<std::endl;
-                std::cout<<v1_x<<" ; "<<v1_y<<" ; "<<v2_x<<" ; "<<v2_y<<std::endl;
-                std::cout<<middle1<<" ; "<<middle2<<std::endl;
+                found = true;
             }
     }
 
+    double s = 0, theta = 0;
+    find_best_theta_grid(0,center_angle,0.1,0.9,0.00001,10,s,theta,middle1,middle2,v1_x,v1_y,v2_x,v2_y,center_angle,a);
 
-    std::cout<<"A : "<<a<<std::endl;
-    double s_min = 0, s_max = 1.0, s;
-    double theta = 0;
-    while(fabs(s_max-s_min)>0.000001)
+    for(unsigned int i=0;i<p.faces.size();i++)
     {
-        s = (s_max+s_min)/2;
-        std::cout<<s<<" "<<theta<<" "<<theta/M_PI*180.f<<" "<<s_min<<" "<<s_max<<std::endl;
-        double tmp = find_best_theta(0,center_angle,0.0001,s,theta,middle1,middle2,v1_x,v1_y,v2_x,v2_y,center_angle);
+        Vector_3 middle(0,0,0);
+        for(unsigned int l=0;l<p.faces[i].size();l++)
+            middle = middle+(p.points[p.faces[i][l]]-Point_3(0,0,0));
+        middle = middle/(double)p.faces[i].size();
 
-        std::cout<<"sa : "<<s*a<<std::endl;
-        if(s*a>tmp)
-            s_max = s;
-        else if(s*a<tmp)
-            s_min = s;
-        else
-            break;
+        for(unsigned int l=0;l<p.faces[i].size();l++)
+        {
+            v1_x = point_to_vec(p.points[p.faces[i][l]])-middle;
+            v1_y = point_to_vec(p.points[p.faces[i][(l+1)%p.faces[i].size()]])-middle;
+            v1_y = v1_y-(v1_x*v1_y)*v1_x/(v1_x*v1_x);
+            v1_y = v1_y/sqrt((v1_y*v1_y)/(v1_x*v1_x));
+
+            points.push_back(convert_to_array(transform(theta,s,middle,v1_x,v1_y)));
+        }
     }
 
-    exit(0);
-
-    return p;
+    return generate_polyhedra_from_points(points);
 }
 
 
@@ -488,8 +418,8 @@ int main()
     operations["softened"] = std::bind(&softened,std::placeholders::_1);
     operations["dual_truncated"] = std::bind(&dual_truncated,std::placeholders::_1);
 
-    /*std::cout<<"======CUBE======"<<std::endl;
-    generate_and_save("regular/cube");*/
+    std::cout<<"======CUBE======"<<std::endl;
+    generate_and_save("regular/cube");
     std::cout<<"======DODECA======"<<std::endl;
     generate_and_save("regular/dodecahedron");
     std::cout<<"======ICOSA======"<<std::endl;

@@ -5,15 +5,15 @@ init();
 
 function parse_to_geom(vertices, faces)
 {
-    var geometry = new THREE.Geometry();
+    var geometry_ = new THREE.Geometry();
     for(i=0; i<vertices.length; i+=3)
-	geometry.vertices.push(new THREE.Vector3(200*vertices[i],200*vertices[i+1],200*vertices[i+2]));
+	geometry_.vertices.push(new THREE.Vector3(200*vertices[i],200*vertices[i+1],200*vertices[i+2]));
 
     for(i=0; i<faces.length; i++)
         for(j=2; j<faces[i].length; j++)
-	    geometry.faces.push(new THREE.Face3(faces[i][0],faces[i][j-1],faces[i][j]));
+	    geometry_.faces.push(new THREE.Face3(faces[i][0],faces[i][j-1],faces[i][j]));
 
-    return geometry;
+    return geometry_;
 }
 
 function init()
@@ -27,9 +27,18 @@ function init()
     $.get("http://localhost:8181/geom", function(result) {
 	  console.log(result);
 	  tmp = JSON.parse(result);
-	  console.log(tmp);
     	  geometry = parse_to_geom(tmp.vertices, tmp.faces);
    	  console.log(geometry);
+	  finish_init();
+	  animate();
+	});
+
+    $.get("http://localhost:8181/cube", function(result) {
+	  console.log(result);
+	  tmp = JSON.parse(result);
+          console.log(tmp);
+    	  geometry2 = parse_to_geom(tmp.vertices, tmp.faces);
+   	  console.log(geometry2);
 	  finish_init();
 	  animate();
 	});
@@ -39,11 +48,15 @@ function finish_init()
 {
     console.log(geometry);
     geometry.computeBoundingSphere();
-
     material = new THREE.MeshBasicMaterial({color: 0xff0000, wireframe: true});
-
     mesh = new THREE.Mesh(geometry, material);
     scene.add(new THREE.EdgesHelper(mesh,0xff0000));
+
+    console.log(geometry2);
+    geometry2.computeBoundingSphere();
+    material2 = new THREE.MeshBasicMaterial({color: 0x00ff00, wireframe: true});
+    mesh2 = new THREE.Mesh(geometry2, material2);
+    scene.add(new THREE.EdgesHelper(mesh2,0x00ff00));
 
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);

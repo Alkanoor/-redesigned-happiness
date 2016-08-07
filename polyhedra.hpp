@@ -78,5 +78,42 @@ Polyhedra from_file(const std::string& path)
     return Polyhedra({points,faces});
 }
 
+void to_file(const Polyhedra& p, const std::string& path)
+{
+    std::ofstream ofs(path,std::ios::out|std::ios::trunc);
+
+    print_endline(ofs,p.points);
+    ofs<<std::endl;
+    print_sep(ofs,p.faces,' ');
+}
+
+void to_file_json(const Polyhedra& p, const std::string& path)
+{
+    std::ofstream ofs_json(path,std::ios::out|std::ios::trunc);
+    ofs_json<<"{\"vertices\":[";
+    for(unsigned int i=0; i<p.points.size(); i++)
+        if(i+1<p.points.size())
+            ofs_json<<p.points[i].x()<<","<<p.points[i].y()<<","<<p.points[i].z()<<",";
+        else
+            ofs_json<<p.points[i].x()<<","<<p.points[i].y()<<","<<p.points[i].z();
+    ofs_json<<"],\"faces\":[";
+    unsigned int cur = 0;
+    for(auto f : p.faces)
+    {
+        ofs_json<<"[";
+        for(unsigned int i=0; i<f.size(); i++)
+            if(i+1<f.size())
+                ofs_json<<f[i]<<",";
+            else
+                ofs_json<<f[i];
+        if(cur+1<p.faces.size())
+            ofs_json<<"],";
+        else
+            ofs_json<<"]";
+        cur++;
+    }
+    ofs_json<<"]}";
+}
+
 
 #endif

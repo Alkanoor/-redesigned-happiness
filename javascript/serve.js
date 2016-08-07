@@ -4,7 +4,10 @@ var fs = require('fs');
 var index = fs.readFileSync('index.html');
 
 try
-{var geom = fs.readFileSync('../archimede_json/cube.identity');}
+{
+  var geom = fs.readFileSync('../archimede_json/tetrahedron.identity.json');
+  var cube = fs.readFileSync('../archimede_json/tetrahedron.identity.json');
+}
 catch(e)
 {}
 
@@ -15,6 +18,11 @@ http.createServer(function (req, res) {
   {
     res.writeHead(200, {'Content-Type': 'text/plain'});
     res.end(geom);
+  }
+  else if(parsed.pathname == '/cube')
+  {
+    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.end(cube);
   }
   else
   {
