@@ -37,6 +37,9 @@ void generate_and_save(const std::string& path)
         print_character(p2);
 
         to_file_json(p2,"archimede_json/"+file(path)+"."+it->first+".json");
+
+        std::string hash = create_hash(p2.faces);
+        to_file(p2,"archimede_hashed/"+hash+".hashed");
     }
 }
 
@@ -416,9 +419,9 @@ int main()
     operations["truncated"] = std::bind(&truncated,std::placeholders::_1);
     operations["rectified"] = std::bind(&rectified,std::placeholders::_1);
     operations["biseauted"] = std::bind(&biseauted,std::placeholders::_1);
+    operations["dual_truncated"] = std::bind(&dual_truncated,std::placeholders::_1);
     operations["omnitruncated"] = std::bind(&omnitruncated,std::placeholders::_1);
     operations["softened"] = std::bind(&softened,std::placeholders::_1);
-    operations["dual_truncated"] = std::bind(&dual_truncated,std::placeholders::_1);
 
     std::cout<<"======CUBE======"<<std::endl;
     generate_and_save("regular/cube");

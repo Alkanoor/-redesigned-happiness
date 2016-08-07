@@ -17,7 +17,7 @@ TARGET3 = shining
 EXEC3 = $(RELEASE_DIR)/$(TARGET3)
 
 FIRST_STAGE = regular
-SECOND_STAGE = archimede archimede_json
+SECOND_STAGE = archimede archimede_json archimede_hashed
 FINAL_STAGE = shining
 
 CC = g++

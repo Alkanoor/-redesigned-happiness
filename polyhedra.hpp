@@ -102,6 +102,33 @@ Polyhedra from_file(const std::string& path)
     return Polyhedra({points,faces});
 }
 
+std::string create_hash(const std::vector<std::vector<int> >& index)
+{
+    std::string ret;
+    std::map<int,int> corresp;
+    
+    for(unsigned int i=0; i<index.size(); i++)
+        if(corresp.count(index[i].size()))
+            corresp[index[i].size()]++;
+        else
+            corresp[index[i].size()] = 1;
+
+    unsigned int i = 0;
+    for(auto it=corresp.begin(); it!=corresp.end(); it++, i++)
+    {
+        std::ostringstream oss1;
+        std::ostringstream oss2;
+        oss1<<it->first;
+        oss2<<it->second;
+        if(i+1<corresp.size())
+            ret += oss1.str()+":"+oss2.str()+":";
+        else
+            ret += oss1.str()+":"+oss2.str();
+    }
+
+    return ret;
+}
+
 void to_file(const Polyhedra& p, const std::string& path)
 {
     std::ofstream ofs(path,std::ios::out|std::ios::trunc);
