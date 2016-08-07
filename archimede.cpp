@@ -31,7 +31,7 @@ void generate_and_save(const std::string& path)
 
     for(auto it=operations.begin(); it!=operations.end(); it++)
     {
-        Polyhedra p2 = it->second(p);
+        Polyhedra p2 = normalize(it->second(p));
         to_file(p2,"archimede/"+file(path)+"."+it->first);
         std::cout<<it->first<<std::endl;
         print_character(p2);
@@ -42,80 +42,14 @@ void generate_and_save(const std::string& path)
 
 
 
-Polyhedra dual(const Polyhedra& p)
-{
-    std::vector<std::array<double,3> > points(p.faces.size());
 
-    for(unsigned int i=0;i<p.faces.size();i++)
-    {
-        std::array<double,3> cur = {0,0,0};
-        for(unsigned int j=0;j<p.faces[i].size();j++)
-        {
-            cur[0] += p.points[p.faces[i][j]].x()/(double)p.faces[i].size();
-            cur[1] += p.points[p.faces[i][j]].y()/(double)p.faces[i].size();
-            cur[2] += p.points[p.faces[i][j]].z()/(double)p.faces[i].size();
-        }
-        points[i] = cur;
-    }
 
-    return generate_polyhedra_from_points(points);
-}
-
-Polyhedra truncated(const Polyhedra& p)
-{
-    std::vector<std::array<double,3> > points;
-    std::map<int,std::set<int> > edges;
-
-    double a = sqrt(CGAL::squared_distance(p.points[p.faces[0][0]],p.points[p.faces[0][1]]));
-
-    for(unsigned int i=0;i<p.faces.size();i++)
-    {
-        unsigned int s = p.faces[i].size();
-        double b = a/(2.0*(1.0+sin(M_PI*(0.5-1.0/(double)s))));
-        for(unsigned int j=0;j<s;j++)
-            if(!edges.count(p.faces[i][j])||edges[p.faces[i][j]].count(p.faces[i][(j+1)%s])==0)
-            {
-                edges[p.faces[i][j]].insert(p.faces[i][(j+1)%s]);
-                edges[p.faces[i][(j+1)%s]].insert(p.faces[i][j]);
-                Vector_3 cur = p.points[p.faces[i][(j+1)%s]]-p.points[p.faces[i][j]];
-                cur = cur/sqrt(cur*cur);
-                points.push_back(convert_to_array(p.points[p.faces[i][j]]+cur*b));
-                points.push_back(convert_to_array(p.points[p.faces[i][j]]+cur*(a-b)));
-            }
-    }
-
-    return generate_polyhedra_from_points(points);
-}
-
-Polyhedra rectified(const Polyhedra& p)
-{
-    std::vector<std::array<double,3> > points;
-    std::map<int,std::set<int> > edges;
-
-    for(unsigned int i=0;i<p.faces.size();i++)
-    {
-        unsigned int s = p.faces[i].size();
-        for(unsigned int j=0;j<s;j++)
-            if(!edges.count(p.faces[i][j])||edges[p.faces[i][j]].count(p.faces[i][(j+1)%s])==0)
-            {
-                edges[p.faces[i][j]].insert(p.faces[i][(j+1)%s]);
-                edges[p.faces[i][(j+1)%s]].insert(p.faces[i][j]);
-                Vector_3 cur = p.points[p.faces[i][(j+1)%s]]-p.points[p.faces[i][j]];
-                points.push_back(convert_to_array(p.points[p.faces[i][j]]+cur/2));
-            }
-    }
-
-    return generate_polyhedra_from_points(points);
-}
 
 Polyhedra biseauted_chosen_faces(const Polyhedra& p, const std::vector<int>& good_faces)
 {
     std::vector<std::array<double,3> > points;
 
-    Vector_3 center(0,0,0);
-    for(unsigned int i=0;i<p.points.size();i++)
-        center = center+(p.points[i]-Point_3(0,0,0));
-    center = center/(double)p.points.size();
+    Vector_3 center = get_center(p.points);
 
     unsigned int tmp = p.faces[good_faces[0]].size();
     Vector_3 tmp_middle_face(0,0,0);
@@ -199,15 +133,6 @@ Polyhedra biseauted_chosen_faces(const Polyhedra& p, const std::vector<int>& goo
     return generate_polyhedra_from_points(points);
 }
 
-Polyhedra biseauted(const Polyhedra& p)
-{
-    std::vector<int> good_faces(p.faces.size());
-    for(unsigned int i=0;i<good_faces.size();i++)
-        good_faces[i] = i;
-
-    return biseauted_chosen_faces(p,good_faces);
-}
-
 std::vector<int> matching(const Polyhedra& p1, const Polyhedra& p2)
 {
     std::vector<int> ret;
@@ -239,18 +164,6 @@ std::vector<int> matching(const Polyhedra& p1, const Polyhedra& p2)
     }
 
     return ret;
-}
-
-Polyhedra identity(const Polyhedra& p)
-{return p;}
-
-Polyhedra dual_truncated(const Polyhedra& p)
-{return truncated(dual(p));}
-
-Polyhedra omnitruncated(const Polyhedra& p)
-{
-    Polyhedra truncated_p = truncated(p);
-    return biseauted_chosen_faces(truncated_p,matching(p,truncated_p));
 }
 
 double measure(double a, double b, double c)
@@ -337,14 +250,102 @@ std::pair<double,double> find_best_theta_grid(double begin_theta, double end_the
 }
 
 
+
+
+
+
+
+
+Polyhedra dual(const Polyhedra& p)
+{
+    std::vector<std::array<double,3> > points(p.faces.size());
+
+    for(unsigned int i=0;i<p.faces.size();i++)
+    {
+        std::array<double,3> cur = {0,0,0};
+        for(unsigned int j=0;j<p.faces[i].size();j++)
+        {
+            cur[0] += p.points[p.faces[i][j]].x()/(double)p.faces[i].size();
+            cur[1] += p.points[p.faces[i][j]].y()/(double)p.faces[i].size();
+            cur[2] += p.points[p.faces[i][j]].z()/(double)p.faces[i].size();
+        }
+        points[i] = cur;
+    }
+
+    return generate_polyhedra_from_points(points);
+}
+
+Polyhedra truncated(const Polyhedra& p)
+{
+    std::vector<std::array<double,3> > points;
+    std::map<int,std::set<int> > edges;
+
+    double a = sqrt(CGAL::squared_distance(p.points[p.faces[0][0]],p.points[p.faces[0][1]]));
+
+    for(unsigned int i=0;i<p.faces.size();i++)
+    {
+        unsigned int s = p.faces[i].size();
+        double b = a/(2.0*(1.0+sin(M_PI*(0.5-1.0/(double)s))));
+        for(unsigned int j=0;j<s;j++)
+            if(!edges.count(p.faces[i][j])||edges[p.faces[i][j]].count(p.faces[i][(j+1)%s])==0)
+            {
+                edges[p.faces[i][j]].insert(p.faces[i][(j+1)%s]);
+                edges[p.faces[i][(j+1)%s]].insert(p.faces[i][j]);
+                Vector_3 cur = p.points[p.faces[i][(j+1)%s]]-p.points[p.faces[i][j]];
+                cur = cur/sqrt(cur*cur);
+                points.push_back(convert_to_array(p.points[p.faces[i][j]]+cur*b));
+                points.push_back(convert_to_array(p.points[p.faces[i][j]]+cur*(a-b)));
+            }
+    }
+
+    return generate_polyhedra_from_points(points);
+}
+
+Polyhedra rectified(const Polyhedra& p)
+{
+    std::vector<std::array<double,3> > points;
+    std::map<int,std::set<int> > edges;
+
+    for(unsigned int i=0;i<p.faces.size();i++)
+    {
+        unsigned int s = p.faces[i].size();
+        for(unsigned int j=0;j<s;j++)
+            if(!edges.count(p.faces[i][j])||edges[p.faces[i][j]].count(p.faces[i][(j+1)%s])==0)
+            {
+                edges[p.faces[i][j]].insert(p.faces[i][(j+1)%s]);
+                edges[p.faces[i][(j+1)%s]].insert(p.faces[i][j]);
+                Vector_3 cur = p.points[p.faces[i][(j+1)%s]]-p.points[p.faces[i][j]];
+                points.push_back(convert_to_array(p.points[p.faces[i][j]]+cur/2));
+            }
+    }
+
+    return generate_polyhedra_from_points(points);
+}
+
+Polyhedra biseauted(const Polyhedra& p)
+{
+    std::vector<int> good_faces(p.faces.size());
+    for(unsigned int i=0;i<good_faces.size();i++)
+        good_faces[i] = i;
+
+    return biseauted_chosen_faces(p,good_faces);
+}
+
+Polyhedra identity(const Polyhedra& p)
+{return p;}
+
+Polyhedra dual_truncated(const Polyhedra& p)
+{return truncated(dual(p));}
+
+Polyhedra omnitruncated(const Polyhedra& p)
+{
+    Polyhedra truncated_p = truncated(p);
+    return biseauted_chosen_faces(truncated_p,matching(p,truncated_p));
+}
+
 Polyhedra softened(const Polyhedra& p)
 {
     std::vector<std::array<double,3> > points;
-
-    Vector_3 center(0,0,0);
-    for(unsigned int i=0;i<p.points.size();i++)
-        center = center+(p.points[i]-Point_3(0,0,0));
-    center = center/(double)p.points.size();
 
     Vector_3 middle1(0,0,0), middle2(0,0,0);
     Vector_3 v1_x(0,0,0), v1_y(0,0,0), v2_x(0,0,0), v2_y(0,0,0);
@@ -405,6 +406,7 @@ Polyhedra softened(const Polyhedra& p)
 
     return generate_polyhedra_from_points(points);
 }
+
 
 
 int main()

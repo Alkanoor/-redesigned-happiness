@@ -40,6 +40,30 @@ void print_character(const Polyhedra& p)
     std::cout<<std::endl;
 }
 
+Vector_3 get_center(const std::vector<Point_3>& points)
+{
+    Vector_3 center(0,0,0);
+    for(unsigned int i=0;i<points.size();i++)
+        center = center+(points[i]-Point_3(0,0,0));
+    center = center/(double)points.size();
+    return center;
+}
+
+Polyhedra normalize(const Polyhedra& p, double norm = 1)
+{
+    Vector_3 center = get_center(p.points);
+
+    std::vector<Point_3> points = p.points;
+    for(unsigned int i=0;i<points.size();i++)
+    {
+        Vector_3 p = point_to_vec(points[i])-center;
+        p = p/sqrt(p*p);
+        points[i] = vec_to_point(center+p);
+    }
+
+    return {points,p.faces};
+}
+
 Polyhedra from_file(const std::string& path)
 {
     std::vector<Point_3> points;
