@@ -17,12 +17,12 @@ TARGET3 = shining
 EXEC3 = $(RELEASE_DIR)/$(TARGET3)
 
 FIRST_STAGE = regular
-SECOND_STAGE = archimede archimede_json archimede_hashed
+SECOND_STAGE = archimede archimede_json archimede_hashed archimede_hashed/catalan
 FINAL_STAGE = shining
 
 CC = g++
 CFLAGS = -Wall -Werror -O1 -std=c++11
-LDFLAGS = -lm -lCGAL -lCGAL_Core -lgmp
+LDFLAGS = -lm -lCGAL -lCGAL_Core -lgmp -std=c++11
 
 
 all: createDir $(EXEC1) $(EXEC2) $(EXEC3)
@@ -42,7 +42,7 @@ $(OBJ_DIR)/%.o: %.cpp
 run: createDir $(EXEC1)
 	./$(EXEC1)
 
-run-regular: run
+run-regular: createDir $(EXEC1)
 
 run-archimede: createDir run-regular $(EXEC2)
 	./$(EXEC2)

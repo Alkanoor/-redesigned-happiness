@@ -13,39 +13,6 @@
 
 std::map<std::string,std::function<Polyhedra(Polyhedra)> > operations;
 
-std::string file(const std::string& in)
-{
-    std::string res;
-    int i = (int)in.size()-1;
-    while(i>0&&in[i]!='/')
-    {
-        res = in[i]+res;
-        i--;
-    }
-    return res;
-}
-
-void generate_and_save(const std::string& path)
-{
-    Polyhedra p = from_file(path);
-
-    for(auto it=operations.begin(); it!=operations.end(); it++)
-    {
-        Polyhedra p2 = normalize(it->second(p));
-        to_file(p2,"archimede/"+file(path)+"."+it->first);
-        std::cout<<it->first<<std::endl;
-        print_character(p2);
-
-        to_file_json(p2,"archimede_json/"+file(path)+"."+it->first+".json");
-
-        std::string hash = create_hash(p2.faces);
-        to_file(p2,"archimede_hashed/"+hash+".hashed");
-    }
-}
-
-
-
-
 
 
 Polyhedra biseauted_chosen_faces(const Polyhedra& p, const std::vector<int>& good_faces)
@@ -410,6 +377,32 @@ Polyhedra softened(const Polyhedra& p)
     return generate_polyhedra_from_points(points);
 }
 
+
+
+
+void generate_and_save(const std::string& path)
+{
+    Polyhedra p = from_file(path);
+
+    for(auto it=operations.begin(); it!=operations.end(); it++)
+    {
+        Polyhedra p2 = normalize(it->second(p));
+        to_file(p2,"archimede/"+file(path)+"."+it->first);
+        std::cout<<it->first<<std::endl;
+        print_character(p2);
+
+        to_file_json(p2,"archimede_json/"+file(path)+"."+it->first+".json");
+
+        std::string hash = create_hash(p2.faces);
+        to_file(p2,"archimede_hashed/"+hash+".hashed");
+
+        Polyhedra p3 = dual(p2);
+        to_file(p3,"archimede/"+file(path)+"."+it->first+".dual");
+        to_file_json(p3,"archimede_json/"+file(path)+"."+it->first+".dual.json");
+        hash = create_hash(p3.faces);
+        to_file(p3,"archimede_hashed/catalan/"+hash+".hashed");
+    }
+}
 
 
 int main()
