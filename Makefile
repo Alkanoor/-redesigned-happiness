@@ -42,7 +42,7 @@ $(OBJ_DIR)/%.o: %.cpp
 run: createDir $(EXEC1)
 	./$(EXEC1)
 
-run-regular: createDir $(EXEC1)
+run-regular: run
 
 run-archimede: createDir run-regular $(EXEC2)
 	./$(EXEC2)
