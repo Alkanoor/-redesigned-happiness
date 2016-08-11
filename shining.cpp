@@ -1,4 +1,6 @@
 #include "convex_polyhedra_from_points.hpp"
+#include "polyhedron_topology.hpp"
+#include "faces_graph.hpp"
 
 #include <dirent.h>
 
@@ -21,13 +23,26 @@ std::vector<std::string> get_paths(const std::string& directory)
     return ret;
 }
 
+
+
+
 std::vector<std::pair<Polyhedra,std::string> > create_stars(const Polyhedra& p, int max_spaces = 5)
 {
-    std::map<int,int> index = faces_to_map(p.faces);
-    int n = (int)index.size();
+    std::map<int,int> n_of_index = faces_to_map(p.faces);
+    int n = (int)n_of_index.size();
+    std::vector<int> index(n);
 
+    auto it = n_of_index.begin();
+    for(int i=0; i<n; i++,it++)
+        index[i] = it->first;
+
+    Polyhedron_topology topo(p.faces);
+    topo.log(std::cout);
+
+    std::map<int,std::set<int> > faces_neighbours = topo.get_faces_neighbours();
+
+    std::vector<std::vector<Graph> > graphs = Graph::make_graphs(p.faces,index,max_spaces,faces_neighbours);
     std::vector<std::pair<Polyhedra,std::string> > ret;
-    std::vector<std::vector<Graph> > graphs(n);
     std::vector<bool> use(n);
 
     for(int i=1;i<(1<<n);i++)
@@ -37,7 +52,6 @@ std::vector<std::pair<Polyhedra,std::string> > create_stars(const Polyhedra& p, 
             if(i&(1<<j))
             {
                 use[j] = true;
-                graphs[j] = make_graphs(p.faces,j,ok,max_spaces);
                 base_hash += '1';
             }
             else
@@ -46,7 +60,7 @@ std::vector<std::pair<Polyhedra,std::string> > create_stars(const Polyhedra& p, 
                 base_hash += '0';
             }
 
-        std::vector<Polyhedra> polyhedrons;
+        /*std::vector<Polyhedra> polyhedrons;
         std::vector<Point_3> points_cpy;
         std::vector<std::vector<int> > index_cpy;
         itere(0,use,graphs,points_cpy,index_cpy,polyhedrons);
@@ -56,7 +70,7 @@ std::vector<std::pair<Polyhedra,std::string> > create_stars(const Polyhedra& p, 
             std::ostringstream oss;
             oss<<j;
             ret.push_back(std::pair<Polyhedra,std::string>(polyhedrons[j],base_hash+"-"+oss.str()));
-        }
+        }*/
     }
 
     return ret;
@@ -71,12 +85,15 @@ int main()
         std::cout<<path<<std::endl;
         Polyhedra p = from_file("archimede_hashed/"+path);
         std::cout<<p<<std::endl;
-        std::string name = file(path).substr(0,path.find(".hashed"));
+        if(p.points.size())
+        {
+            std::string name = file(path).substr(0,path.find(".hashed"));
 
-        std::vector<std::pair<Polyhedra,std::string> > shining = create_stars(p);
+            std::vector<std::pair<Polyhedra,std::string> > shining = create_stars(p);
 
-        for(auto it : shining)
-            to_file(it.first,"shining/"+name+"-"+it.second);
+            for(auto it : shining)
+                to_file(it.first,"shining/"+name+"-"+it.second);
+        }
     }
     return 0;
 }

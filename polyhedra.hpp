@@ -5,9 +5,7 @@
 #include "polyhedron_utils.hpp"
 #include "util.hpp"
 
-#include <ostream>
 #include <fstream>
-#include <vector>
 
 
 struct Polyhedra

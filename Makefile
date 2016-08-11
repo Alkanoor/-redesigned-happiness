@@ -2,9 +2,9 @@ OBJ_DIR = obj
 SRC_DIR = .
 SRC1 = regular.cpp
 OBJ1 := $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(SRC1)))
-SRC2 = archimede.cpp
+SRC2 = archimede.cpp util.cpp
 OBJ2 := $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(SRC2)))
-SRC3 = shining.cpp
+SRC3 = polyhedron_topology.cpp shining.cpp faces_graph.cpp util.cpp
 OBJ3 := $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(SRC3)))
 VPATH=.
 
@@ -48,6 +48,12 @@ run-archimede: createDir run-regular $(EXEC2)
 	./$(EXEC2)
 
 run-shining: createDir run-archimede $(EXEC3)
+	./$(EXEC3)
+
+run-archimede-no-depend: createDir $(EXEC2)
+	./$(EXEC2)
+
+run-shining-no-depend: createDir $(EXEC3)
 	./$(EXEC3)
 
 
