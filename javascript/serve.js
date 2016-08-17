@@ -5,10 +5,12 @@ var index = fs.readFileSync('index.html');
 
 try
 {
-  var geom = fs.readFileSync('../archimede_json/tetrahedron.identity.json');
+  var geom = fs.readFileSync('../shining/3:8:4:18-11-4.json');
 }
 catch(e)
-{}
+{
+    console.log("Resource not found");
+}
 
 http.createServer(function (req, res) {
   console.log(url.parse(req.url).pathname);
@@ -22,16 +24,26 @@ http.createServer(function (req, res) {
   {
     try
     {
-      stats = fs.lstatSync('../archimede_json/'+parsed.pathname.substring(1)+'.json');
+      stats = fs.lstatSync('../shining/'+parsed.pathname.substring(1)+'.json');
       if(stats.isFile())
       {
-        geom = fs.readFileSync('../archimede_json/'+parsed.pathname.substring(1)+'.json');
-        console.log('Archimede served');
+        geom = fs.readFileSync('../shining/'+parsed.pathname.substring(1)+'.json');
+        console.log('Shining served');
       }
     }
     catch(e)
-    {console.log('Normal index served');}
-    
+    {
+        try
+        {
+          geom = fs.readFileSync('../archimede_json/'+parsed.pathname.substring(1)+'.json');
+          console.log('Archimede served');
+        }
+        catch(e)
+        {
+          console.log('Normal index served');
+        }
+    }
+
     try
     {
       stats = fs.lstatSync(parsed.pathname.substring(1));
