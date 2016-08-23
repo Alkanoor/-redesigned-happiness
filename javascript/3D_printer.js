@@ -51,8 +51,25 @@ function finish_init()
     window.addEventListener('keydown', function(event) {
   	switch(event.keyCode) {
             case 32:
-	        pause = 1-pause;
-	    break;}
+    	        pause = 1-pause;
+    	        break;
+            case 37:
+                $.get("http://localhost:8181/prev", function(result) {
+                  console.log(result);
+                  tmp = JSON.parse(result);
+                  geometry = parse_to_geom(tmp.vertices, tmp.faces);
+                  console.log(geometry);
+                });
+                break;
+            case 39:
+                $.get("http://localhost:8181/next", function(result) {
+                  console.log(result);
+                  tmp = JSON.parse(result);
+                  geometry = parse_to_geom(tmp.vertices, tmp.faces);
+                  console.log(geometry);
+                });
+                break;
+            }
         }, false);
 }
 

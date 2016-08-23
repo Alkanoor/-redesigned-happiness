@@ -171,5 +171,40 @@ void to_file_json(const Polyhedra& p, const std::string& path)
     ofs_json<<"]}";
 }
 
+void to_file_model(const Polyhedra& p, const std::string& path)
+{
+    std::ofstream ofs_model(path,std::ios::out|std::ios::trunc|std::ios::binary);
+    std::ifstream ifs_model("model.mqo",std::ios::out|std::ios::binary);
+
+    std::string tmp1, tmp2;
+    while(std::getline(ifs_model,tmp1))
+    {
+        ofs_model<<tmp2<<std::endl;
+        tmp2 = tmp1;
+    }
+
+    ofs_model<<tmp2;
+    ofs_model<<p.points.size()<<" {"<<std::endl;
+    for(unsigned int i=0; i<p.points.size(); i++)
+        ofs_model<<"		"<<p.points[i].x()<<" "<<p.points[i].y()<<" "<<p.points[i].z()<<std::endl;
+    ofs_model<<"	}"<<std::endl;
+    ofs_model<<"	face "<<p.faces.size()<<" {"<<std::endl;
+
+    unsigned int cur = 0;
+    for(auto f : p.faces)
+    {
+        ofs_model<<"		"<<f.size()<<" V(";
+        for(unsigned int i=0; i<f.size(); i++)
+            if(i+1<f.size())
+                ofs_model<<f[i]<<" ";
+            else
+                ofs_model<<f[i];
+        ofs_model<<") M("<<cur<<")"<<std::endl;
+        cur++;
+    }
+    ofs_model<<"	}"<<std::endl;
+    ofs_model<<"}"<<std::endl<<"Eof";
+}
+
 
 #endif

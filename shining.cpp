@@ -133,6 +133,7 @@ std::vector<std::pair<Polyhedra,std::string> > create_stars(const Polyhedra& p, 
 }
 
 //3:20:4:30:5:12-101-0
+//3:20:4:30:5:12-010-0
 int main()
 {
     std::vector<std::string> paths = get_paths("archimede_hashed");
@@ -149,7 +150,10 @@ int main()
             std::vector<std::pair<Polyhedra,std::string> > shining = create_stars(p);
 
             for(auto it : shining)
+            {
                 to_file_json(it.first,"shining/"+name+"-"+it.second+".json");
+                to_file_model(it.first,"shining_mqo/"+name+"-"+it.second+".mqo");
+            }
         }
     }
     return 0;

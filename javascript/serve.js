@@ -1,6 +1,8 @@
 var http = require('http');
+var walk = require('walk');
 var url = require('url');
 var fs = require('fs');
+var files = []
 var index = fs.readFileSync('index.html');
 
 try
@@ -12,12 +14,40 @@ catch(e)
     console.log("Resource not found");
 }
 
+i = 0;
+var walker = walk.walk('../shining', {followLinks: false});
+walker.on('file', function(root, stat, next) {files.push(root+'/'+stat.name); next();})
+
 http.createServer(function (req, res) {
   console.log(url.parse(req.url).pathname);
   parsed = url.parse(req.url);
   if(parsed.pathname == '/geom')
   {
     res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.end(geom);
+  }
+  else if(parsed.pathname == '/prev')
+  {
+    i--;
+    if(i<0)
+        i += files.length;
+    if(i<0)
+        i = 0;
+    if(i<files.length)
+        geom = fs.readFileSync(files[i]);
+    console.log('Prev served '+files[i]);
+    res.end(geom);
+  }
+  else if(parsed.pathname == '/next')
+  {
+    i++;
+    if(i>=files.length)
+        i -= files.length;
+    if(i>=files.length)
+        i = 0;
+    if(i<files.length)
+        geom = fs.readFileSync(files[i]);
+    console.log('Next served '+files[i]);
     res.end(geom);
   }
   else

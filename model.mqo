@@ -1,0 +1,25 @@
+Metasequoia Document
+Format Text Ver 1.0
+
+Scene {
+	pos 0.0000 0.0000 1500.0000
+	lookat 0.0000 0.0000 0.0000
+	head -6.9836
+	pich 0.5208
+	ortho 0
+	zoom2 1.0
+	amb 0.250 0.250 0.250
+}
+
+Object "obj1" {
+	depth 0
+	folding 0
+	scale 1.000000 1.000000 1.000000
+	rotation 0.000000 0.000000 0.000000
+	translation 0.000000 0.000000 0.000000
+	visible 15
+	locking 0
+	shading 1
+	color 0.598 0.498 0.698
+	color_type 0
+	vertex 
