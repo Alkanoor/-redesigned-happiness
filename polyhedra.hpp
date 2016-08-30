@@ -176,15 +176,17 @@ void to_file_model(const Polyhedra& p, const std::string& path)
     std::ofstream ofs_model(path,std::ios::out|std::ios::trunc|std::ios::binary);
     std::ifstream ifs_model("model.mqo",std::ios::out|std::ios::binary);
 
+    bool ok = false;
     std::string tmp1, tmp2;
     while(std::getline(ifs_model,tmp1))
     {
-        ofs_model<<tmp2<<std::endl;
+        if(ok)
+            ofs_model<<tmp2<<std::endl;
         tmp2 = tmp1;
+        ok = true;
     }
 
-    ofs_model<<tmp2;
-    ofs_model<<p.points.size()<<" {"<<std::endl;
+    ofs_model<<"	vertex "<<p.points.size()<<" {"<<std::endl;
     for(unsigned int i=0; i<p.points.size(); i++)
         ofs_model<<"		"<<p.points[i].x()<<" "<<p.points[i].y()<<" "<<p.points[i].z()<<std::endl;
     ofs_model<<"	}"<<std::endl;

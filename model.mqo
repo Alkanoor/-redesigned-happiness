@@ -21,5 +21,4 @@ Object "obj1" {
 	locking 0
 	shading 1
 	color 0.598 0.498 0.698
-	color_type 0
-	vertex 
+	color_type 0 
