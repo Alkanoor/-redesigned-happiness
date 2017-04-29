@@ -16,9 +16,9 @@ EXEC2 = $(RELEASE_DIR)/$(TARGET2)
 TARGET3 = shining
 EXEC3 = $(RELEASE_DIR)/$(TARGET3)
 
-FIRST_STAGE = regular
-SECOND_STAGE = archimede archimede_json archimede_hashed archimede_hashed/catalan
-FINAL_STAGE = shining shining_mqo
+FIRST_STAGE = regular regular_obj
+SECOND_STAGE = archimede archimede_json archimede_hashed archimede_obj archimede_hashed/catalan
+FINAL_STAGE = shining shining_mqo shining_obj
 
 CC = g++
 CFLAGS = -Wall -Werror -O1 -std=c++11
