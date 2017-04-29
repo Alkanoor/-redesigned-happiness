@@ -153,6 +153,7 @@ int main()
             {
                 to_file_json(it.first,"shining/"+name+"-"+it.second+".json");
                 to_file_model(it.first,"shining_mqo/"+name+"-"+it.second+".mqo");
+                to_file_obj(it.first,"shining_obj/"+name+"-"+it.second+".obj");
             }
         }
     }

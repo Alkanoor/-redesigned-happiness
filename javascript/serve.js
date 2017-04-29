@@ -7,7 +7,7 @@ var index = fs.readFileSync('index.html');
 
 try
 {
-  var geom = fs.readFileSync('../shining/3:8:4:18-11-4.json');
+  var geom = fs.readFileSync('../shining/3_8_4_18-11-4.json');
 }
 catch(e)
 {

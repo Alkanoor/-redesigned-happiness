@@ -394,13 +394,16 @@ void generate_and_save(const std::string& path)
         to_file_json(p2,"archimede_json/"+file(path)+"."+it->first+".json");
 
         std::string hash = create_hash(p2.faces);
+        std::cout<<hash<<std::endl;
         to_file(p2,"archimede_hashed/"+hash+".hashed");
+        to_file_obj(p2,"archimede_obj/"+hash+".obj");
 
         Polyhedra p3 = dual(p2);
         to_file(p3,"archimede/"+file(path)+"."+it->first+".dual");
         to_file_json(p3,"archimede_json/"+file(path)+"."+it->first+".dual.json");
         hash = create_hash(p3.faces);
         to_file(p3,"archimede_hashed/catalan/"+hash+".hashed");
+        to_file_obj(p3,"archimede_obj/"+hash+"-catalan.obj");
     }
 }
 

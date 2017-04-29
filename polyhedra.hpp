@@ -126,9 +126,9 @@ std::string create_hash(const std::vector<std::vector<int> >& index)
         oss1<<it->first;
         oss2<<it->second;
         if(i+1<corresp.size())
-            ret += oss1.str()+":"+oss2.str()+":";
+            ret += oss1.str()+"_"+oss2.str()+"_";
         else
-            ret += oss1.str()+":"+oss2.str();
+            ret += oss1.str()+"_"+oss2.str();
     }
 
     return ret;
@@ -169,6 +169,23 @@ void to_file_json(const Polyhedra& p, const std::string& path)
         cur++;
     }
     ofs_json<<"]}";
+}
+
+void to_file_obj(const Polyhedra& p, const std::string& path)
+{
+    std::ofstream ofs_obj(path,std::ios::out|std::ios::trunc);
+    ofs_obj<<"# Polyhedra created with love"<<std::endl<<std::endl;
+    ofs_obj<<"g My_Stardust"<<std::endl<<std::endl;
+    for(unsigned int i=0; i<p.points.size(); i++)
+        ofs_obj<<"v "<<std::setprecision(7)<<p.points[i].x()<<" "<<p.points[i].y()<<" "<<p.points[i].z()<<std::endl;
+    ofs_obj<<std::endl;
+    for(auto f : p.faces)
+    {
+        ofs_obj<<"f ";
+        for(unsigned int i=0; i<f.size(); i++)
+            ofs_obj<<f[i]+1<<" ";
+        ofs_obj<<std::endl;
+    }
 }
 
 void to_file_model(const Polyhedra& p, const std::string& path)
